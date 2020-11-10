@@ -1,5 +1,6 @@
 import React from 'react'
 import PropType from 'prop-types'
+import {fetchPopularRepos} from '../utils/api'
 
 
 
@@ -29,31 +30,53 @@ LanguagesNav.prototype = {
     selected: PropType.string.isRequired,
     onUpdateLanguage: PropType.func.isRequired
 }
+
 class Popular extends React.Component{
 
     constructor(props){
         super(props)
 
         this.state = {
-            selectedLang: 'All'
+            selectedLang: 'All',
+            repos: null,
+            error: null
         }
 
         // its good habit to bind methods whenever creating one like this
         // to avoid the common undefined setStatet problem
         this.updatedLang = this.updatedLang.bind(this)
+        this.isLoading = this.isLoading.bind(this)
     }
+
+    componentDidMount () {
+        this.updatedLang(this.state.selected)
+    }
+    
 
     updatedLang(selectedLang) {
         this.setState({
             selectedLang
              
         })
-        // console.log('lang selcted')
-    } 
+        fetchPopularRepos(selectedLang)
+            .then((repos) => this.setState({
+                repos,
+                error: null
+            }))
+            .catch(() => {
+                console.warn('Error Fetching Repos: '  )
+                this.setState({
+                    error: 'There was an error fetching the repositories.'
+                })
+            })
+     } 
 
+     isLoading() {
+        return this.state.repos === null && this.state.error === null
+     }
 
     render() {
-        const {selectedLang} = this.state
+        const {selectedLang, repos, error} = this.state
 
         return (
             <React.Fragment>
@@ -61,6 +84,10 @@ class Popular extends React.Component{
                     selected={selectedLang}
                     onUpdateLanguage={this.updatedLang}
                 />
+
+                {this.isLoading() && <p>LOADING</p>}
+                {error && <p>{error}</p>}
+                {repos && <pre>{JSON.stringify(repos, null, 2)}</pre>}
             </React.Fragment>
         )
     }
